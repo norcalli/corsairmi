@@ -296,10 +296,10 @@ int main(int argc, char *argv[])
 	for (osel = 0; osel < 3; osel++) {
 		// reg0 write (output select)
 		send_recv_cmd(fd, 0x02, 0x00, osel, NULL, 0);
-    printf("output%u.name\t%s\n", osel, output_names[osel]);
-		print_std_reg(fd, 0x8b, "output%u.volts", osel);
-		print_std_reg(fd, 0x8c, "output%u.amps", osel);
-		print_std_reg(fd, 0x96, "output%u.watts", osel);
+    printf("output%u_name\t%s\n", osel, output_names[osel]);
+		print_std_reg(fd, 0x8b, "output%u_volts", osel);
+		print_std_reg(fd, 0x8c, "output%u_amps", osel);
+		print_std_reg(fd, 0x96, "output%u_watts", osel);
 	}
 
 	send_recv_cmd(fd, 0x02, 0x00, 0x00, NULL, 0);
