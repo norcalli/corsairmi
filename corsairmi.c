@@ -168,20 +168,16 @@ static double mkv(uint16_t v16)
 
 static void print_std_reg(int fd, uint8_t reg, const char *fmt, ...)
 {
-	size_t len = 0;
 	uint16_t val;
 	va_list ap;
 
 	read_reg16(fd, reg, &val);
 
 	va_start(ap, fmt);
-	len += vprintf(fmt, ap);
-	len += printf(": ");
+	vprintf(fmt, ap);
+	printf("\t");
 	va_end(ap);
-	for (; len < 16; len++)
-		fputs(" ", stdout);
-
-	printf("%5.1f\n", mkv(val));
+	printf("%.2f\n", mkv(val));
 }
 
 static int try_open_device(const char *name, int report_errors)
@@ -267,31 +263,43 @@ int main(int argc, char *argv[])
 
 	name[sizeof(name) - 1] = 0;
 	send_recv_cmd(fd, 0xfe, 0x03, 0x00, name, sizeof(name) - 1);
-	printf("name:           '%s'\n", name);
+	printf("name\t%s\n", name);
 	read_reg(fd, 0x99, name, sizeof(name) - 1);
-	printf("vendor:         '%s'\n", name);
+	printf("vendor\t%s\n", name);
 	read_reg(fd, 0x9a, name, sizeof(name) - 1);
-	printf("product:        '%s'\n", name);
+	printf("product\t%s\n", name);
 
 	read_reg32(fd, 0xd1, &v32);
-	printf("powered:        %u (%dd. %dh)\n",
-		v32, v32 / (24*60*60), v32 / (60*60) % 24);
+	printf("powered_seconds\t%u\n", v32);
+  int days, hours, minutes, seconds;
+  seconds = v32 % 60; v32 /= 60;
+  minutes = v32 % 60; v32 /= 60;
+  hours = v32 % 24; v32 /= 24;
+  days = v32;
+	printf("powered_formatted\t%dd. %dh. %dm. %ds.\n", days, hours, minutes, seconds);
 	read_reg32(fd, 0xd2, &v32);
-	printf("uptime:         %u (%dd. %dh)\n",
-		v32, v32 / (24*60*60), v32 / (60*60) % 24);
+	printf("uptime_seconds\t%u\n", v32);
+  seconds = v32 % 60; v32 /= 60;
+  minutes = v32 % 60; v32 /= 60;
+  hours = v32 % 24; v32 /= 24;
+  days = v32;
+	printf("uptime_formatted\t%dd. %dh. %dm. %ds.\n", days, hours, minutes, seconds);
 
 	print_std_reg(fd, 0x8d, "temp1");
 	print_std_reg(fd, 0x8e, "temp2");
-	print_std_reg(fd, 0x90, "fan rpm");
-	print_std_reg(fd, 0x88, "supply volts");
-	print_std_reg(fd, 0xee, "total watts");
+	print_std_reg(fd, 0x90, "fan_rpm");
+	print_std_reg(fd, 0x88, "supply_volts");
+	print_std_reg(fd, 0xee, "total_watts");
+
+  const char* output_names[] = {"12v", "5v", "3.3v"};
 
 	for (osel = 0; osel < 3; osel++) {
 		// reg0 write (output select)
 		send_recv_cmd(fd, 0x02, 0x00, osel, NULL, 0);
-		print_std_reg(fd, 0x8b, "output%u volts", osel);
-		print_std_reg(fd, 0x8c, "output%u amps", osel);
-		print_std_reg(fd, 0x96, "output%u watts", osel);
+    printf("output%u_name\t%s\n", osel, output_names[osel]);
+		print_std_reg(fd, 0x8b, "output%u_volts", osel);
+		print_std_reg(fd, 0x8c, "output%u_amps", osel);
+		print_std_reg(fd, 0x96, "output%u_watts", osel);
 	}
 
 	send_recv_cmd(fd, 0x02, 0x00, 0x00, NULL, 0);
